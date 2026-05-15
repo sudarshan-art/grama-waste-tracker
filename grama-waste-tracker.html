@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Grama Waste Tracker</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Kannada:wght@400;600&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --green: #1e7d4b;
+  --green-light: #e8f5ee;
+  --green-mid: #2ea66a;
+  --amber: #f59e0b;
+  --red: #ef4444;
+  --bg: #f4f6f3;
+  --card: #ffffff;
+  --text: #1a2e1f;
+  --muted: #6b7c6f;
+  --border: #d4e0d7;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); }
+
+/* NAV */
+nav {
+  background: var(--green);
+  padding: 0 20px;
+  display: flex; align-items: center; justify-content: space-between;
+  height: 56px;
+  position: sticky; top: 0; z-index: 100;
+}
+.nav-brand { display: flex; align-items: center; gap: 10px; color: white; font-size: 17px; font-weight: 600; }
+.nav-brand span { font-size: 22px; }
+.nav-tabs { display: flex; gap: 4px; }
+.nav-tab {
+  color: rgba(255,255,255,0.7); background: none; border: none;
+  padding: 6px 14px; border-radius: 20px; font-size: 13px;
+  cursor: pointer; font-family: inherit; transition: all 0.2s;
+}
+.nav-tab.active, .nav-tab:hover { background: rgba(255,255,255,0.18); color: white; }
+
+/* PAGES */
+.page { display: none; padding: 20px; max-width: 680px; margin: 0 auto; }
+.page.active { display: block; }
+
+/* ALERT BANNER */
+.alert-banner {
+  background: #fff8e1; border: 1px solid #fbbf24;
+  border-radius: 10px; padding: 12px 16px;
+  display: flex; align-items: center; gap: 10px;
+  margin-bottom: 16px; font-size: 14px; font-weight: 500;
+  color: #92400e;
+}
+.alert-banner span { font-size: 20px; }
+
+/* MAP CONTAINER */
+.map-box {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: 14px; overflow: hidden; margin-bottom: 16px;
+  position: relative;
+}
+.map-svg-wrap { width: 100%; aspect-ratio: 16/9; position: relative; background: #e8efe5; }
+.map-label {
+  position: absolute; top: 10px; left: 10px;
+  background: white; border-radius: 8px; padding: 4px 10px;
+  font-size: 12px; font-weight: 600; color: var(--green);
+  border: 1px solid var(--border);
+}
+#tractor-marker {
+  position: absolute;
+  font-size: 26px;
+  transition: left 2s ease, top 2s ease;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
+  transform: translate(-50%, -50%);
+}
+
+/* ROADS SVG */
+.map-roads { position: absolute; inset: 0; width: 100%; height: 100%; }
+
+/* STATUS CARD */
+.status-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 16px; }
+.stat-card {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: 12px; padding: 14px 12px; text-align: center;
+}
+.stat-num { font-size: 24px; font-weight: 600; color: var(--green); }
+.stat-label { font-size: 11px; color: var(--muted); margin-top: 2px; text-transform: uppercase; letter-spacing: 0.04em; }
+
+/* WASTE GUIDE */
+.section-title { font-size: 15px; font-weight: 600; margin-bottom: 10px; color: var(--text); }
+.waste-guide { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
+.waste-card {
+  border-radius: 12px; padding: 14px;
+  display: flex; align-items: flex-start; gap: 10px;
+}
+.waste-card.wet { background: #e8f5ee; border: 1px solid #a7d7b8; }
+.waste-card.dry { background: #fff8e1; border: 1px solid #fcd34d; }
+.waste-icon { font-size: 28px; }
+.waste-title { font-size: 14px; font-weight: 600; margin-bottom: 4px; }
+.waste-card.wet .waste-title { color: #166534; }
+.waste-card.dry .waste-title { color: #92400e; }
+.waste-items { font-size: 12px; color: var(--muted); line-height: 1.7; }
+
+/* REPORT FORM */
+.form-card {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: 14px; padding: 20px; margin-bottom: 16px;
+}
+.form-title { font-size: 16px; font-weight: 600; margin-bottom: 4px; }
+.form-sub { font-size: 13px; color: var(--muted); margin-bottom: 18px; }
+.field { margin-bottom: 14px; }
+label { display: block; font-size: 12px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px; }
+input[type=text], textarea, select {
+  width: 100%; padding: 10px 13px; border-radius: 9px;
+  border: 1px solid var(--border); font-size: 14px;
+  font-family: inherit; background: #fafafa; color: var(--text);
+  outline: none; transition: border 0.2s;
+}
+input[type=text]:focus, textarea:focus, select:focus { border-color: var(--green-mid); background: white; }
+textarea { resize: vertical; min-height: 80px; }
+.photo-upload {
+  border: 2px dashed var(--border); border-radius: 10px;
+  padding: 20px; text-align: center; cursor: pointer;
+  transition: border 0.2s; background: #fafafa;
+}
+.photo-upload:hover { border-color: var(--green-mid); background: var(--green-light); }
+.photo-upload span { font-size: 28px; display: block; margin-bottom: 6px; }
+.photo-upload p { font-size: 13px; color: var(--muted); }
+.gps-row {
+  display: flex; align-items: center; gap: 8px;
+  background: var(--green-light); border-radius: 9px;
+  padding: 10px 13px; font-size: 13px; color: var(--green);
+  font-weight: 500; margin-bottom: 14px;
+}
+.btn-submit {
+  width: 100%; padding: 13px; background: var(--green);
+  color: white; border: none; border-radius: 10px;
+  font-size: 15px; font-weight: 600; cursor: pointer;
+  font-family: inherit; transition: background 0.2s;
+}
+.btn-submit:hover { background: #166534; }
+.btn-submit:active { transform: scale(0.98); }
+
+/* SUCCESS TOAST */
+.toast {
+  position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(80px);
+  background: #166534; color: white; padding: 12px 24px;
+  border-radius: 30px; font-size: 14px; font-weight: 500;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+  transition: transform 0.4s ease; z-index: 999;
+  white-space: nowrap;
+}
+.toast.show { transform: translateX(-50%) translateY(0); }
+
+/* ADMIN PAGE */
+.blackspot-list { display: flex; flex-direction: column; gap: 10px; }
+.blackspot-card {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: 12px; padding: 14px 16px;
+  display: flex; gap: 12px; align-items: flex-start;
+}
+.bs-pin { font-size: 24px; flex-shrink: 0; margin-top: 2px; }
+.bs-loc { font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 2px; }
+.bs-desc { font-size: 13px; color: var(--muted); }
+.bs-time { font-size: 11px; color: var(--muted); margin-top: 4px; }
+.bs-badge {
+  margin-left: auto; flex-shrink: 0;
+  font-size: 11px; font-weight: 600;
+  padding: 3px 9px; border-radius: 99px;
+}
+.bs-badge.pending { background: #fef3c7; color: #92400e; }
+.bs-badge.resolved { background: #d1fae5; color: #065f46; }
+.admin-header {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: 14px; padding: 16px; margin-bottom: 16px;
+  display: flex; align-items: center; gap: 12px;
+}
+.admin-title { font-size: 15px; font-weight: 600; }
+.admin-sub { font-size: 12px; color: var(--muted); margin-top: 2px; }
+
+/* KANNADA font for labels */
+.kn { font-family: 'Noto Sans Kannada', sans-serif; }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-brand"><span>♻️</span> Grama Waste Tracker</div>
+  <div class="nav-tabs">
+    <button class="nav-tab active" onclick="showPage('home', this)">Live Map</button>
+    <button class="nav-tab" onclick="showPage('report', this)">Report</button>
+    <button class="nav-tab" onclick="showPage('admin', this)">Admin</button>
+  </div>
+</nav>
+
+<!-- HOME PAGE -->
+<div class="page active" id="home">
+  <div class="alert-banner" id="alert-box" style="display:none">
+    <span>⚠️</span>
+    <div>
+      <strong>Alert!</strong> Tractor is 2 streets away — please keep waste ready.
+      <span class="kn" style="font-size:12px;display:block;color:#a16207">ಟ್ರ್ಯಾಕ್ಟರ್ 2 ಬೀದಿ ದೂರದಲ್ಲಿದೆ</span>
+    </div>
+  </div>
+
+  <div class="map-box">
+    <div class="map-svg-wrap" id="map-area">
+      <div class="map-label">📍 Live — Kuvempu Nagar, Village Ward 3</div>
+      <!-- Road grid SVG -->
+      <svg class="map-roads" viewBox="0 0 640 360" xmlns="http://www.w3.org/2000/svg">
+        <!-- Background -->
+        <rect width="640" height="360" fill="#e8efe5"/>
+        <!-- Blocks (land parcels) -->
+        <rect x="40" y="40" width="120" height="80" rx="3" fill="#d4e8c2" stroke="#b8d4a0" stroke-width="1"/>
+        <rect x="180" y="40" width="120" height="80" rx="3" fill="#d4e8c2" stroke="#b8d4a0" stroke-width="1"/>
+        <rect x="320" y="40" width="120" height="80" rx="3" fill="#d4e8c2" stroke="#b8d4a0" stroke-width="1"/>
+        <rect x="460" y="40" width="140" height="80" rx="3" fill="#d4e8c2" stroke="#b8d4a0" stroke-width="1"/>
+        <rect x="40" y="150" width="120" height="80" rx="3" fill="#d4e8c2" stroke="#b8d4a0" stroke-width="1"/>
+        <rect x="180" y="150" width="120" height="80" rx="3" fill="#d4e8c2" stroke="#b8d4a0" stroke-width="1"/>
+        <rect x="320" y="150" width="120" height="80" rx="3" fill="#d4e8c2" stroke="#b8d4a0" stroke-width="1"/>
+        <rect x="460" y="150" width="140" height="80" rx="3" fill="#d4e8c2" stroke="#b8d4a0" stroke-width="1"/>
+        <rect x="40" y="260" width="120" height="80" rx="3" fill="#d4e8c2" stroke="#b8d4a0" stroke-width="1"/>
+        <rect x="180" y="260" width="120" height="80" rx="3" fill="#d4e8c2" stroke="#b8d4a0" stroke-width="1"/>
+        <rect x="320" y="260" width="120" height="80" rx="3" fill="#d4e8c2" stroke="#b8d4a0" stroke-width="1"/>
+        <rect x="460" y="260" width="140" height="80" rx="3" fill="#d4e8c2" stroke="#b8d4a0" stroke-width="1"/>
+        <!-- Horizontal roads -->
+        <rect x="0" y="128" width="640" height="18" fill="#c8c09a"/>
+        <line x1="0" y1="137" x2="640" y2="137" stroke="white" stroke-width="1" stroke-dasharray="20,16"/>
+        <rect x="0" y="238" width="640" height="18" fill="#c8c09a"/>
+        <line x1="0" y1="247" x2="640" y2="247" stroke="white" stroke-width="1" stroke-dasharray="20,16"/>
+        <!-- Vertical roads -->
+        <rect x="164" y="0" width="12" height="360" fill="#c8c09a"/>
+        <rect x="304" y="0" width="12" height="360" fill="#c8c09a"/>
+        <rect x="444" y="0" width="12" height="360" fill="#c8c09a"/>
+        <!-- Road labels -->
+        <text x="88" y="124" text-anchor="middle" font-size="9" fill="#6b6b50" font-family="sans-serif">1st Cross</text>
+        <text x="88" y="234" text-anchor="middle" font-size="9" fill="#6b6b50" font-family="sans-serif">2nd Cross</text>
+        <text x="160" y="30" text-anchor="middle" font-size="9" fill="#6b6b50" font-family="sans-serif" transform="rotate(-90, 160, 60)">Main Rd</text>
+        <!-- Blackspot indicators -->
+        <text x="250" y="200" font-size="16" text-anchor="middle">🗑️</text>
+        <text x="480" y="110" font-size="16" text-anchor="middle">🗑️</text>
+      </svg>
+      <div id="tractor-marker" style="left:8%;top:38%">🚛</div>
+    </div>
+    <div style="padding:12px 16px;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">
+      <div style="font-size:13px;color:var(--muted)">Next stop: <strong style="color:var(--text)">House #42, 1st Cross</strong></div>
+      <div id="eta-label" style="font-size:13px;font-weight:600;color:var(--green)">ETA: ~8 min</div>
+    </div>
+  </div>
+
+  <div class="status-row">
+    <div class="stat-card">
+      <div class="stat-num" id="houses-done">12</div>
+      <div class="stat-label">Houses done</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num">48</div>
+      <div class="stat-label">Total stops</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num" style="color:var(--amber)">2</div>
+      <div class="stat-label">Blackspots</div>
+    </div>
+  </div>
+
+  <div class="section-title">Waste segregation guide <span class="kn" style="font-size:13px;font-weight:400;color:var(--muted)">— ತ್ಯಾಜ್ಯ ವಿಂಗಡಣೆ</span></div>
+  <div class="waste-guide">
+    <div class="waste-card wet">
+      <div class="waste-icon">🟢</div>
+      <div>
+        <div class="waste-title">Wet waste <span class="kn" style="font-size:11px">ಹಸಿ ತ್ಯಾಜ್ಯ</span></div>
+        <div class="waste-items">Kitchen scraps<br>Vegetable peels<br>Cooked food<br>Leaves, flowers</div>
+      </div>
+    </div>
+    <div class="waste-card dry">
+      <div class="waste-icon">🟡</div>
+      <div>
+        <div class="waste-title">Dry waste <span class="kn" style="font-size:11px">ಒಣ ತ್ಯಾಜ್ಯ</span></div>
+        <div class="waste-items">Paper, cardboard<br>Plastic bottles<br>Glass, metal<br>Cloth, rubber</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- REPORT PAGE -->
+<div class="page" id="report">
+  <div class="form-card">
+    <div class="form-title">🗺️ Report a Blackspot</div>
+    <div class="form-sub">Found illegal dumping? Report it to the Panchayat.</div>
+
+    <div class="gps-row">
+      📍 GPS captured: <strong>12.9716° N, 77.5946° E</strong>
+      <span style="font-size:11px;margin-left:auto;opacity:0.8">Auto-detected</span>
+    </div>
+
+    <div class="field">
+      <label>Location description</label>
+      <input type="text" id="loc-input" placeholder="e.g. Near the banyan tree, Main Road" />
+    </div>
+
+    <div class="field">
+      <label>Type of waste</label>
+      <select id="waste-type">
+        <option value="">Select type...</option>
+        <option>Household garbage pile</option>
+        <option>Construction debris</option>
+        <option>Plastic waste</option>
+        <option>Open drain blockage</option>
+        <option>Other</option>
+      </select>
+    </div>
+
+    <div class="field">
+      <label>Description</label>
+      <textarea id="desc-input" placeholder="Describe the issue — how big, how long has it been there..."></textarea>
+    </div>
+
+    <div class="field">
+      <label>Photo</label>
+      <div class="photo-upload" onclick="document.getElementById('file-in').click()">
+        <span id="photo-icon">📷</span>
+        <p id="photo-label">Tap to upload a photo</p>
+        <input type="file" accept="image/*" id="file-in" style="display:none" onchange="photoSelected(this)">
+      </div>
+    </div>
+
+    <button class="btn-submit" onclick="submitReport()">Submit Report →</button>
+  </div>
+</div>
+
+<!-- ADMIN PAGE -->
+<div class="page" id="admin">
+  <div class="admin-header">
+    <div style="font-size:32px">🏛️</div>
+    <div>
+      <div class="admin-title">Panchayat Admin Dashboard</div>
+      <div class="admin-sub">Kuvempu Nagar Gram Panchayat — Ward 3</div>
+    </div>
+    <div style="margin-left:auto;text-align:right">
+      <div style="font-size:20px;font-weight:600;color:var(--red)">3</div>
+      <div style="font-size:11px;color:var(--muted)">Open reports</div>
+    </div>
+  </div>
+
+  <div class="section-title" style="margin-bottom:10px">Reported blackspots</div>
+  <div class="blackspot-list" id="blackspot-list">
+    <div class="blackspot-card">
+      <div class="bs-pin">📍</div>
+      <div style="flex:1">
+        <div class="bs-loc">Near Banyan Tree, Main Road</div>
+        <div class="bs-desc">Large pile of plastic waste and household garbage. Has been there for 3 days.</div>
+        <div class="bs-time">Reported 2 hours ago · 12.9720° N, 77.5952° E</div>
+      </div>
+      <span class="bs-badge pending">Pending</span>
+    </div>
+    <div class="blackspot-card">
+      <div class="bs-pin">📍</div>
+      <div style="flex:1">
+        <div class="bs-loc">Behind Community Hall, 2nd Cross</div>
+        <div class="bs-desc">Construction debris blocking the drain. About 4 bags of cement waste.</div>
+        <div class="bs-time">Reported 1 day ago · 12.9731° N, 77.5960° E</div>
+      </div>
+      <span class="bs-badge pending">Pending</span>
+    </div>
+    <div class="blackspot-card">
+      <div class="bs-pin">📍</div>
+      <div style="flex:1">
+        <div class="bs-loc">Bus stop, Rajiv Gandhi Nagar Road</div>
+        <div class="bs-desc">Open garbage dumped by commuters. Plastic bottles and food waste.</div>
+        <div class="bs-time">Reported 3 days ago · 12.9708° N, 77.5941° E</div>
+      </div>
+      <span class="bs-badge resolved">Resolved</span>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast">✅ Report submitted to Panchayat!</div>
+
+<script>
+function showPage(id, btn) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  btn.classList.add('active');
+}
+
+const route = [
+  {l:8,t:38},{l:20,t:38},{l:33,t:38},{l:33,t:55},
+  {l:33,t:72},{l:47,t:72},{l:60,t:72},{l:73,t:72},
+  {l:73,t:55},{l:73,t:38},{l:60,t:38},{l:47,t:38}
+];
+let step = 0, houses = 12;
+const etas = ['~8 min','~6 min','~4 min','~3 min','~2 min','~1 min','Arrived!','~7 min','~5 min','~3 min','~2 min','~1 min'];
+
+function moveTractor() {
+  step = (step + 1) % route.length;
+  const m = document.getElementById('tractor-marker');
+  m.style.left = route[step].l + '%';
+  m.style.top  = route[step].t + '%';
+  document.getElementById('eta-label').textContent = 'ETA: ' + etas[step];
+  if (step === route.length - 3) {
+    document.getElementById('alert-box').style.display = 'flex';
+    setTimeout(() => document.getElementById('alert-box').style.display='none', 5000);
+  }
+  if (step % 3 === 0 && houses < 48) {
+    houses++;
+    document.getElementById('houses-done').textContent = houses;
+  }
+}
+setInterval(moveTractor, 2500);
+
+function photoSelected(input) {
+  if (input.files && input.files[0]) {
+    document.getElementById('photo-icon').textContent = '✅';
+    document.getElementById('photo-label').textContent = input.files[0].name;
+  }
+}
+
+function submitReport() {
+  const loc = document.getElementById('loc-input').value;
+  const type = document.getElementById('waste-type').value;
+  const desc = document.getElementById('desc-input').value;
+  if (!loc || !type) { alert('Please fill in the location and waste type.'); return; }
+  const toast = document.getElementById('toast');
+  toast.classList.add('show');
+  setTimeout(() => toast.classList.remove('show'), 3000);
+  const list = document.getElementById('blackspot-list');
+  const card = document.createElement('div');
+  card.className = 'blackspot-card';
+  card.innerHTML = `
+    <div class="bs-pin">📍</div>
+    <div style="flex:1">
+      <div class="bs-loc">${loc}</div>
+      <div class="bs-desc">${desc || type}</div>
+      <div class="bs-time">Just now · 12.9716° N, 77.5946° E</div>
+    </div>
+    <span class="bs-badge pending">Pending</span>`;
+  list.insertBefore(card, list.firstChild);
+  document.getElementById('loc-input').value = '';
+  document.getElementById('desc-input').value = '';
+  document.getElementById('waste-type').value = '';
+  document.getElementById('photo-icon').textContent = '📷';
+  document.getElementById('photo-label').textContent = 'Tap to upload a photo';
+}
+</script>
+</body>
+</html>
